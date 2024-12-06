@@ -1,18 +1,34 @@
+# Compiler and flags
 CC = gcc
-CFLAGS = -pthread -Wall -Wextra
+CFLAGS = -pthread -Wall -Wextra -Iinclude
 
-SOURCES = server.c request_handler.c logger.c
-HEADERS = request_handler.h logger.h
-OBJECTS = $(SOURCES:.c=.o)
-TARGET = server
+# Directories
+SRC_DIR = src
+INC_DIR = include
+BUILD_DIR = build
 
+# Files
+SOURCES = $(wildcard $(SRC_DIR)/*.c)
+HEADERS = $(wildcard $(INC_DIR)/*.h)
+OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
+TARGET = $(BUILD_DIR)/server
+
+# Default target
 all: $(TARGET)
+	@echo "Build successful! Executing the server..."
+	@./$(TARGET)
 
+# Link objects into the final executable
 $(TARGET): $(OBJECTS)
+	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
 
-%.o: %.c $(HEADERS)
+# Compile source files into object files
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(HEADERS)
+	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Clean build files
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -rf $(BUILD_DIR)
+	@echo "Cleaned build files."
