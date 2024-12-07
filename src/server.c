@@ -11,7 +11,7 @@
 
 #define PORT 8080
 #define MAX_THREADS 256
-#define MAX_QUEUE 256
+#define MAX_QUEUE 1024
 
 // Job queue
 typedef struct
@@ -119,13 +119,11 @@ void initialize_server(int *server_fd, struct sockaddr_in *address)
     address->sin_family = AF_INET;
     address->sin_addr.s_addr = INADDR_ANY;
     address->sin_port = htons(PORT);
-
+    log_message(LOG_INFO, "Awaiting TCP bind...");
     while (1)
     {
         if (bind(*server_fd, (struct sockaddr *)address, sizeof(*address)) < 0)
         {
-            // log_message(LOG_ERROR, "Bind failed");
-            // exit(EXIT_FAILURE);
         }
         else
             break;

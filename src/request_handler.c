@@ -9,6 +9,7 @@
 
 extern sem_t file_semaphore;
 
+#define SECRET_KEY "K5HS4KzQiL"
 #define MAX_HEADER_SIZE 32768 // Maximum allowed header size
 #define MAX_LINE_SIZE 4096    // Maximum allowed size for a header line
 
@@ -65,8 +66,9 @@ void handle_request(int client_socket)
     char method[16], path[256];
     sscanf(buffer, "%15s %255s", method, path);
 
-    // Parse headers to find Content-Length
+    // Parse headers to find Content-Length and the "secret" parameter
     int content_length = 0;
+    char secret[256] = {0}; // Buffer to store the secret value if found
     char *current_line = buffer;
     while (current_line < buffer + header_end)
     {
@@ -104,8 +106,26 @@ void handle_request(int client_socket)
             content_length = atoi(cl);
         }
 
+        // Parse X-Secret header
+        if (strncasecmp(line, "X-Secret:", 9) == 0)
+        {
+            char *s = line + 9;
+            while (*s == ' ' || *s == '\t')
+                s++; // Skip whitespace
+            strncpy(secret, s, sizeof(secret) - 1);
+            secret[sizeof(secret) - 1] = '\0'; // Ensure null termination
+        }
+
         // Move to the next line
         current_line = next_line + line_ending_length;
+    }
+
+    // Validate the "secret" parameter
+    if (strcmp(secret, SECRET_KEY) != 0)
+    {
+        log_message(LOG_ERROR, "Invalid secret");
+        write(client_socket, "HTTP/1.1 403 Forbidden\r\n\r\n", 27);
+        return;
     }
 
     // Read the body if present
@@ -180,7 +200,6 @@ void handle_request(int client_socket)
         write(client_socket, "HTTP/1.1 405 Method Not Allowed\r\n\r\n", 35);
     }
 }
-
 void handle_get_request(int client_socket, const char *filename)
 {
     log_message(LOG_INFO, "GET request for file: %s", filename);
