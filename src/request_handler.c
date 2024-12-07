@@ -1,5 +1,4 @@
 #include "request_handler.h"
-#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <semaphore.h>
